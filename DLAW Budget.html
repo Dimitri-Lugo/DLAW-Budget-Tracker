@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DLAW Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="DLAW.png" sizes="96x96" />
+  <style>
+    /* Basic resets */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0d1215;
+      color: #b8ff4d;
+      min-height: 100vh;
+    }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    h2 { font-size: 18px; margin-bottom: 10px; }
+
+    /* Tabs */
+    .nav-links a.tab-active {
+      text-decoration: underline;
+    }
+
+    /* Header layout */
+    .header {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #152027;
+      padding: 10px 20px;
+      position: relative;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #b8ff4d;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      position: absolute;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      width: fit-content;
+    }
+    .nav-links a {
+      color: #b8ff4d;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    .content {
+      display: none;
+      padding: 20px;
+    }
+    .content.active {
+      display: block;
+    }
+
+    /* Stats cards */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .card.stat-card {
+      background-color: #192228;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+    .stat-card .title {
+      font-size: 14px;
+      color: #b8ff4d;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    .stat-card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #b8ff4d;
+      cursor: text;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      width: 100%;
+      background-color: #0d1215;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 10px;
+      height: 8px;
+    }
+    .progress-bar {
+      height: 8px;
+      background-color: #84ff53;
+      width: 0;
+    }
+    .percentage {
+      display: block;
+      margin-top: 8px;
+      font-size: 14px;
+      color: #b8ff4d;
+    }
+
+    /* Expenses and Notes */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .card.expenses {
+      grid-column: span 2;
+      display: flex;
+      padding: 20px;
+      position: relative;
+      background-color: #192228;
+      border-radius: 8px;
+    }
+    .expenses .title {
+      font-size: 14px;
+      color: #b8ff4d;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .card.notes-summary {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      background-color: #192228;
+      border-radius: 8px;
+    }
+    .card.notes-summary .title {
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      color: #b8ff4d;
+    }
+    .notes-input {
+      background-color: #152027;
+      border: 1px solid #2a3740;
+      border-radius: 4px;
+      color: #b8ff4d;
+      font-size: 14px;
+      padding: 8px;
+      width: 100%;
+      flex: 1;
+      resize: none;
+      margin-top: 5px;
+    }
+    .notes-input::placeholder {
+      color: #84ff5380;
+    }
+
+    .card.notes-summary {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      background-color: #192228;
+      border-radius: 8px;
+      height: 100%;
+    }
+
+    /* Legends */
+    .legend {
+      list-style: none;
+      margin-left: 20px;
+      padding-left: 0;
+      align-self: center;
+    }
+    .legend li {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #b8ff4d;
+    }
+    .legend-color {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 6px;
+      border-radius: 2px;
+    }
+    .legend .housing { background-color: #76c7b7; }
+    .legend .food { background-color: #ffa270; }
+    .legend .transportation { background-color: #ff6b6b; }
+    .legend .entertainment { background-color: #9d65c9; }
+
+    .card.expenses canvas,
+    .card.expense-breakdown canvas {
+      max-width: 100%;
+    }
+
+    /* Recent Transactions on Dashboard */
+    .card.recent-transactions {
+      background-color: #192228;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    .recent-transactions .title {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #b8ff4d;
+      text-transform: uppercase;
+    }
+    .recent-transactions table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #b8ff4d;
+    }
+    .recent-transactions th, 
+    .recent-transactions td {
+      text-align: left;
+      padding: 8px 4px;
+      font-size: 14px;
+    }
+    .recent-transactions thead {
+      border-bottom: 1px solid #b8ff4d;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    /* Transactions tab */
+    #transactions h1 {
+      margin-bottom: 20px;
+      color: #b8ff4d;
+      text-transform: uppercase;
+    }
+    #search {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+      background-color: #192228;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      color: #b8ff4d;
+    }
+    .card.add-transaction {
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #192228;
+      border-radius: 8px;
+    }
+    .card.add-transaction .card-header {
+      font-size: 14px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: #b8ff4d;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #add-button {
+      background-color: #84ff53;
+      border: none;
+      color: #152027;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    #add-button:hover {
+      background-color: #6ddb3e;
+    }
+    #transaction-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      color: #b8ff4d;
+    }
+    #transaction-table th, 
+    #transaction-table td {
+      padding: 8px;
+      border-bottom: 1px solid #b8ff4d;
+      font-size: 14px;
+      text-align: left;
+    }
+    #transaction-table thead th {
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+    .delete-btn {
+      background-color: #ff6b6b;
+      border: none;
+      color: #152027;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: #ff4a4a;
+    }
+
+    /* Reports tab */
+    #reports h1 {
+      margin-bottom: 20px;
+      color: #b8ff4d;
+      text-transform: uppercase;
+    }
+    .reports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .card.summary {
+      background-color: #192228;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .card.summary .card-header {
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      color: #b8ff4d;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #b8ff4d;
+    }
+
+    .card.expense-breakdown {
+      background-color: #192228;
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card.expense-breakdown .card-header {
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      color: #b8ff4d;
+    }
+
+    .card.top-categories {
+      background-color: #192228;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .card.top-categories .card-header {
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      color: #b8ff4d;
+    }
+    .card.top-categories .summary-row {
+      justify-content: space-between;
+    }
+
+    /* Responsiveness */
+    @media (max-width: 800px) {
+      .grid-container,
+      .reports-grid,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+      .form-row {
+        flex-direction: column;
+      }
+      #search {
+        max-width: none;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">DLAW</div>
+    <div class="nav-links">
+      <a href="#" class="tab-link tab-active" data-tab="dashboard">Dashboard</a>
+      <a href="#" class="tab-link" data-tab="transactions">Transactions</a>
+      <a href="#" class="tab-link" data-tab="reports">Reports</a>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="content active">
+    <div class="stats">
+      <div class="card stat-card">
+        <div class="title">Monthly Income</div>
+        <div class="value" id="monthly-income" contenteditable="true">$0</div>
+      </div>
+      <div class="card stat-card">
+        <div class="title">Monthly Budget</div>
+        <div class="value" id="monthly-budget" contenteditable="true">$0</div>
+      </div>
+      <div class="card stat-card">
+        <div class="title">This Month</div>
+        <div class="value" id="this-month">$0</div>
+        <div class="progress-container">
+          <div id="dashboard-progress" class="progress-bar"></div>
+        </div>
+        <span id="dashboard-percentage" class="percentage">0%</span>
+      </div>
+    </div>
+
+    <div class="grid-container">
+      <div class="card expenses">
+        <div style="flex: 1;">
+          <div class="title">EXPENSES</div>
+          <canvas id="expenseChart" height="200"></canvas>
+        </div>
+        <ul class="legend">
+          <li><span class="legend-color housing"></span>Housing</li>
+          <li><span class="legend-color food"></span>Food</li>
+          <li><span class="legend-color transportation"></span>Transportation</li>
+          <li><span class="legend-color entertainment"></span>Entertainment</li>
+        </ul>
+      </div>
+      <div class="card notes-summary">
+        <div class="title">NOTES</div>
+        <textarea id="user-notes" class="notes-input" placeholder="Add your notes here"></textarea>
+      </div>
+    </div>
+
+    <div class="card recent-transactions">
+      <div class="title">RECENT TRANSACTIONS</div>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Description</th><th>Amount</th></tr>
+        </thead>
+        <tbody id="recent-tbody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div id="transactions" class="content">
+    <h1>Transactions</h1>
+    <input type="text" id="search" placeholder="Search...">
+    <div class="card add-transaction">
+      <div class="card-header">Add Transaction</div>
+      <div class="form-row">
+        <input type="date" id="date-input">
+        <input type="text" id="desc-input" placeholder="Description">
+        <input type="number" id="amount-input" placeholder="0" min="0">
+        <button id="add-button">ADD</button>
+      </div>
+    </div>
+    <table id="transaction-table">
+      <thead>
+        <tr>
+          <th>Date</th><th>Description</th><th>Amount</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="transaction-tbody">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- REPORTS -->
+  <div id="reports" class="content">
+    <h1>Reports Overview</h1>
+    <div class="reports-grid">
+      <!-- Monthly Summary -->
+      <div class="card summary">
+        <div class="card-header">Monthly Summary – <span id="summary-month">May</span></div>
+        <div class="summary-row">
+          <span class="label">MONTHLY INCOME</span>
+          <span id="total-income-report">$0</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">TOTAL EXPENSES</span>
+          <span id="total-expenses">$0</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">REMAINING BUDGET</span>
+          <span id="remaining-budget">$0</span>
+        </div>
+      </div>
+
+      <!-- Expense Breakdown -->
+      <div class="card expense-breakdown">
+        <div class="card-header">Expense Breakdown by Category</div>
+        <canvas id="expenseBreakdownChart" height="200"></canvas>
+        <ul class="legend">
+          <li><span class="legend-color housing"></span>Housing</li>
+          <li><span class="legend-color food"></span>Food</li>
+          <li><span class="legend-color transportation"></span>Transportation</li>
+          <li><span class="legend-color entertainment"></span>Entertainment</li>
+        </ul>
+      </div>
+
+      <!-- Top Categories -->
+      <div class="card top-categories">
+        <div class="card-header">Top Expense Categories</div>
+        <div class="summary-row"><span class="label">Transportation</span><span id="top-transportation">0%</span></div>
+        <div class="summary-row"><span class="label">Food</span><span id="top-food">0%</span></div>
+        <div class="summary-row"><span class="label">Housing</span><span id="top-housing">0%</span></div>
+        <div class="summary-row"><span class="label">Entertainment</span><span id="top-entertainment">0%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let transactions = [];
+    let monthlyIncome = 0;
+    let monthlyBudget = 0;
+    
+    // Retrieving the current date for default date input
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    
+    // current month tracking
+    const curMonth = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
+    
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June', 
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Update the summary month display
+    document.getElementById('summary-month').textContent = months[currentMonth - 1];
+
+    // LocalStorage
+    function saveTransactions() {
+      localStorage.setItem('dlaw_transactions', JSON.stringify(transactions));
+    }
+    
+    function saveIncome() {
+      localStorage.setItem('dlaw_income', monthlyIncome.toString());
+    }
+    
+    function saveBudget() {
+      localStorage.setItem('dlaw_budget', monthlyBudget.toString());
+    }
+    
+    function loadStoredData() {
+      const storedTransactions = localStorage.getItem('dlaw_transactions');
+      if (storedTransactions) {
+        transactions = JSON.parse(storedTransactions);
+      }
+      
+      const storedIncome = localStorage.getItem('dlaw_income');
+      if (storedIncome) {
+        monthlyIncome = parseFloat(storedIncome);
+        document.getElementById('monthly-income').textContent = '$' + monthlyIncome.toLocaleString();
+      }
+      
+      const storedBudget = localStorage.getItem('dlaw_budget');
+      if (storedBudget) {
+        monthlyBudget = parseFloat(storedBudget);
+        document.getElementById('monthly-budget').textContent = '$' + monthlyBudget.toLocaleString();
+      }
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const month = months[date.getMonth()].slice(0, 3);
+      const day = date.getDate();
+      return `${month} ${day}`;
+    }
+
+    // Dashboard Recent Transactions Populate (5)
+    function populateRecent() {
+      const recent = transactions.slice(-5).reverse();
+      const tbody = document.getElementById('recent-tbody');
+      tbody.innerHTML = '';
+      recent.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formatDate(t.date)}</td>
+          <td>${t.desc}</td>
+          <td>$${t.amount}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Populate Transactions Table
+    function populateTransactionsTable() {
+      const tbody = document.getElementById('transaction-tbody');
+      tbody.innerHTML = '';
+      transactions
+        .slice().sort((a,b) => new Date(b.date) - new Date(a.date))
+        .forEach((t, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${formatDate(t.date)}</td>
+            <td>${t.desc}</td>
+            <td>$${t.amount}</td>
+            <td><button class="delete-btn" data-index="${i}">Delete</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      // delete
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = parseInt(e.currentTarget.dataset.index, 10);
+          transactions.splice(idx, 1);
+          saveTransactions();
+          refreshAll();
+        });
+      });
+    }
+
+    // Updating Totals and Dashboard
+    function updateTotals() {
+      // This Month sum
+      const thisMonthSum = transactions
+        .filter(t => t.date.startsWith(curMonth))
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      document.getElementById('this-month').textContent = '$' + thisMonthSum.toLocaleString();
+      
+      const pct = monthlyBudget > 0
+        ? Math.round(thisMonthSum / monthlyBudget * 100)
+        : 0;
+      
+      document.getElementById('dashboard-progress').style.width = pct + '%';
+      document.getElementById('dashboard-percentage').textContent = pct + '%';
+
+      // Monthly Income
+      document.getElementById('monthly-income').textContent = '$' + monthlyIncome.toLocaleString();
+
+      // Reports summary
+      document.getElementById('total-income-report').textContent = '$' + monthlyIncome.toLocaleString();
+      document.getElementById('total-expenses').textContent = '$' + thisMonthSum.toLocaleString();
+      document.getElementById('remaining-budget').textContent = '$' + (monthlyBudget - thisMonthSum).toLocaleString();
+
+      // Top categories
+      const cats = {Housing: 0, Food: 0, Transportation: 0, Entertainment: 0};
+      transactions.forEach(t => {
+        const d = t.desc.toLowerCase();
+        if (d.match(/rent|house/)) cats.Housing += t.amount;
+        else if (d.match(/grocer|food|restaurant/)) cats.Food += t.amount;
+        else if (d.match(/transport/)) cats.Transportation += t.amount;
+        else cats.Entertainment += t.amount;
+      });
+      
+      const tot = Object.values(cats).reduce((a, b) => a + b, 0);
+      
+      if (tot > 0) {
+        document.getElementById('top-housing').textContent = Math.round(cats.Housing / tot * 100) + '%';
+        document.getElementById('top-food').textContent = Math.round(cats.Food / tot * 100) + '%';
+        document.getElementById('top-transportation').textContent = Math.round(cats.Transportation / tot * 100) + '%';
+        document.getElementById('top-entertainment').textContent = Math.round(cats.Entertainment / tot * 100) + '%';
+      } else {
+        // Setting placeholder values if no transactions, so the pie charts display
+        document.getElementById('top-housing').textContent = '25%';
+        document.getElementById('top-food').textContent = '25%';
+        document.getElementById('top-transportation').textContent = '25%';
+        document.getElementById('top-entertainment').textContent = '25%';
+      }
+
+      updateExpenseCharts();
+    }
+
+    const ctxExp = document.getElementById('expenseChart').getContext('2d');
+    const ctxBreak = document.getElementById('expenseBreakdownChart').getContext('2d');
+
+    let expenseChart, expenseBreakdownChart;
+
+    function initCharts() {
+      // Default placeholder values in case there aren't transactions input to display charts
+      const placeholderValues = [25, 25, 25, 25];
+      
+      expenseChart = new Chart(ctxExp, {
+        type: 'pie',
+        data: {
+          labels: ['Housing', 'Food', 'Transportation', 'Entertainment'],
+          datasets: [{ 
+            data: placeholderValues, 
+            backgroundColor: ['#76c7b7', '#ffa270', '#ff6b6b', '#9d65c9'] 
+          }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+      
+      expenseBreakdownChart = new Chart(ctxBreak, {
+        type: 'pie',
+        data: {
+          labels: ['Housing', 'Food', 'Transportation', 'Entertainment'],
+          datasets: [{ 
+            data: placeholderValues, 
+            backgroundColor: ['#76c7b7', '#ffa270', '#ff6b6b', '#9d65c9'] 
+          }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+    }
+
+    function updateExpenseCharts() {
+      // Category totals
+      const cats = {Housing: 0, Food: 0, Transportation: 0, Entertainment: 0};
+      
+      transactions.forEach(t => {
+        const d = t.desc.toLowerCase();
+        if (d.match(/rent|house/)) cats.Housing += t.amount;
+        else if (d.match(/grocer|food|restaurant/)) cats.Food += t.amount;
+        else if (d.match(/transport/)) cats.Transportation += t.amount;
+        else cats.Entertainment += t.amount;
+      });
+      
+      const total = Object.values(cats).reduce((sum, val) => sum + val, 0);
+      
+      // If there are no transactions, using placeholder values for a balanced distribution
+      if (total === 0) {
+        expenseChart.data.datasets[0].data = [25, 25, 25, 25];
+        expenseBreakdownChart.data.datasets[0].data = [25, 25, 25, 25];
+      } else {
+        expenseChart.data.datasets[0].data = Object.values(cats);
+        expenseBreakdownChart.data.datasets[0].data = Object.values(cats);
+      }
+      
+      expenseChart.update();
+      expenseBreakdownChart.update();
+    }
+
+    // Search Filter
+    document.getElementById('search').addEventListener('input', function() {
+      const term = this.value.toLowerCase();
+      document.querySelectorAll('#transaction-tbody tr').forEach(row => {
+        const desc = row.cells[1].textContent.toLowerCase();
+        row.style.display = desc.includes(term) ? '' : 'none';
+      });
+    });
+
+    // Add Transaction
+    document.getElementById('add-button').addEventListener('click', () => {
+      const d = document.getElementById('date-input').value;
+      const de = document.getElementById('desc-input').value.trim();
+      const am = parseFloat(document.getElementById('amount-input').value);
+      
+      if (d && de && am > 0) {
+        transactions.push({date: d, desc: de, amount: am});
+        document.getElementById('desc-input').value = '';
+        document.getElementById('amount-input').value = '';
+        saveTransactions();
+        refreshAll();
+      }
+    });
+
+    // Editable Fields and Not allowing negative value inputs
+    document.getElementById('monthly-budget').addEventListener('blur', e => {
+      // Parse value and ensure it's not negative
+      let newValue = parseFloat(e.target.textContent.replace(/[$,]/g, '')) || 0;
+      if (newValue < 0) newValue = 0;
+      
+      monthlyBudget = newValue;
+      e.target.textContent = '$' + monthlyBudget.toLocaleString();
+      saveBudget();
+      refreshAll();
+    });
+    
+    document.getElementById('monthly-income').addEventListener('blur', e => {
+      // Parse value and ensure it's not negative
+      let newValue = parseFloat(e.target.textContent.replace(/[$,]/g, '')) || 0;
+      if (newValue < 0) newValue = 0;
+      
+      monthlyIncome = newValue;
+      e.target.textContent = '$' + monthlyIncome.toLocaleString();
+      saveIncome();
+      refreshAll();
+    });
+    
+    // Prevent negative numbers on keypress for budget/income fields
+    document.getElementById('monthly-budget').addEventListener('keypress', e => {
+      // Check if the key is a minus sign
+      if (e.key === '-') {
+        e.preventDefault();
+      }
+    });
+    
+    document.getElementById('monthly-income').addEventListener('keypress', e => {
+      // Check if the key is a minus sign
+      if (e.key === '-') {
+        e.preventDefault();
+      }
+    });
+    
+    // Protection measures to negate pasting negative values
+    document.getElementById('monthly-budget').addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const cleanedText = text.replace(/[^0-9.]/g, '');
+      document.execCommand('insertText', false, cleanedText);
+    });
+    
+    document.getElementById('monthly-income').addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const cleanedText = text.replace(/[^0-9.]/g, '');
+      document.execCommand('insertText', false, cleanedText);
+    });
+
+    // Save Notes to localStorage
+    const userNotes = document.getElementById('user-notes');
+    
+    // Load saved notes
+    userNotes.value = localStorage.getItem('dlaw_notes') || '';
+    
+    // Save notes when user stops typing
+    userNotes.addEventListener('input', () => {
+      localStorage.setItem('dlaw_notes', userNotes.value);
+    });
+
+    // Tab Switching
+    document.querySelectorAll('.tab-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('tab-active'));
+        link.classList.add('tab-active');
+        const tab = link.dataset.tab;
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tab).classList.add('active');
+      });
+    });
+
+    // Refresh All
+    function refreshAll() {
+      populateRecent();
+      populateTransactionsTable();
+      updateTotals();
+    }
+
+    // Set default date to today
+    function setDefaultDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0');
+      const day = today.getDate().toString().padStart(2, '0');
+      document.getElementById('date-input').value = `${year}-${month}-${day}`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStoredData(); // Load saved data first
+      initCharts();
+      setDefaultDate();
+      refreshAll();
+    });
+  </script>
+</body>
+</html>
